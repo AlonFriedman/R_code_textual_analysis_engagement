@@ -1,0 +1,53 @@
+# R-specific files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# R Markdown intermediate files
+*.nb.html
+*.log
+.Rmd_cache/
+.Rproj.user/
+
+# RStudio files
+.Rproj.user/
+.Rhistory
+.RData
+.rs.user
+
+# TeX generated files from R Markdown
+*.aux
+*.out
+*.log
+*.toc
+*.nav
+*.snm
+*.vrb
+*.synctex.gz
+*.blg
+*.bbl
+*.fls
+*.fdb_latexmk
+
+# Plot outputs
+/inst/examples/figure/
+
+# Cache files for R Markdown
+*.Rmd_cache/
+*.Rnb.cached
+
+# Knitr output files
+knitr-*.md
+knitr-*.html
+knitr-*.pdf
+
+# Exclude data files that may contain sensitive information
+*.csv
+*.xlsx
+
+# Exclude environment files
+.env
+
+# Exclude the data set from tracking
+path/to/your/Undergraduate2022-2019.xlsx
