@@ -40,21 +40,20 @@ analyze_comments <- function(comments) {
 process_and_visualize_data <- function(filepath) {
   df <- read_excel(filepath)
   
-  # Assuming the DataFrame df has columns 'Year', 'ProjectType', and 'Comments'
-  # Adjust column names based on your actual data
   counts <- analyze_comments(df$Comments)
   
-  # Visualization
-  ggplot(counts, aes(x = upos, y = count, fill = upos)) +
+  plot <- ggplot(counts, aes(x = upos, y = count, fill = upos)) +
     geom_bar(stat = "identity") +
     facet_wrap(~Year + ProjectType) +
     theme_minimal() +
-    labs(title = "POS Counts per Project Type and Year", x = "Part of Speech", y = "Count")
+    labs(title = "arts-of-speech usage per project showing the number of adjectives, adverbs, and
+nouns per review for the first and final projects 2019-2021")
+  
+  print(plot) # Explicitly print the plot
 }
 
-# Example usage
-# Replace 'path_to_your_data.xlsx' with the actual path to your Excel file
-process_and_visualize_data('path_to_your_data.xlsx')
+# Example usage with a generic path
+process_and_visualize_data('path/to/your/Undergraduate2022-2019.xlsx')
 
 #Figure 5.
 
@@ -71,22 +70,34 @@ generate_sentiment_plot <- function(data) {
   ggplot(data, aes(x = grade, y = sentiment_score, fill = sentiment_label)) +
     geom_bar(stat = "identity", position = "dodge") +
     theme_minimal() +
-    labs(title = "Sentiment by Grade", x = "Grade", y = "Sentiment Score")
+    labs(title = "Figure 5: Key word usage by overall grade. Stacked bars represent the numbers of positive,
+negative, and negating words per review, averaged over three semesters", x = "Grade", y = "Sentiment Score")
 }
 
 # Generate the plot using the defined data frame (replace with your actual data processing)
 sentiment_plot <- generate_sentiment_plot(student_data)
+print(sentiment_plot) # Explicitly print the plot
 
-# Save the plot to a file (optional)
-ggsave("sentiment_plot.png", sentiment_plot, width = 8, height = 6)  # Adjust width and height as needed
 
 # figure # 6
 
 # Define a function to read and process data from an Excel file
-read_and_process_data <- function(filepath) {
-  # Read the Excel file
-  student_data <- read_excel(filepath)
+generate_sentiment_by_grade_plot <- function(filepath) {
+  df <- read_and_process_data(filepath)
   
-  # Assuming 'analyze_student_data' is a hypothetical function that would analyze the comments
-  # and return a dataframe with 'grade',
+  plot <- ggplot(df, aes(x = grade)) +
+    geom_bar(aes(y = total_sentiment, fill = "Total Sentiment"), stat = "identity", position = "dodge") +
+    geom_bar(aes(y = absolute_sentiment, fill = "Absolute Sentiment"), stat = "identity", position = "dodge", alpha = 0.5) +
+    labs(title = "Sentiment by Overall Grade, illustrating the total (positive minus negative)
+sentiment and absolute value of sentiment per overall course letter grade, accompanied by
+standard deviation. This analysis is based on a dataset of 406 student reviews collected
+over all three semesters", x = "Grade", y = "Sentiment Score") +
+    scale_fill_manual(values = c("Total Sentiment" = "blue", "Absolute Sentiment" = "red")) +
+    theme_minimal()
+  
+  print(plot) # Explicitly print the plot
+}
+
+# Example usage with a generic path
+generate_sentiment_by_grade_plot('path/to/your/Undergraduate2022-2019.xlsx')
   
