@@ -15,11 +15,6 @@ filepath <- "path/to/your/Undergraduate2022-2019.xlsx"
 
 # ... rest of your script ...
 
-# Figure # 4
-
-# Download and load the udpipe model for English
-ud_model <- udpipe_download_model(language = "english", model_dir = ".")
-ud_model <- udpipe_load_model(ud_model$file_model)
 
 # Function to analyze comments and count POS
 analyze_comments <- function(comments) {
