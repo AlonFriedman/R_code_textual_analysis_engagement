@@ -9,8 +9,6 @@ library(tm)    # Optional, not used in this revised code
 library(readxl)  
 library(udpipe)
 
-# Install haven if not already installed
-if (!require(haven)) install.packages("haven")
 
 # Specify the file path (update as needed)
 filepath <- "path/to/your/Undergraduate2022-2019.xlsx"
