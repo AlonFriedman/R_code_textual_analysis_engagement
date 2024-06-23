@@ -10,7 +10,7 @@ library(readxl)
 library(udpipe)
 
 # Specify the file path (update as needed)
-filepath <- "/path/to/your/"
+filepath <- "/path/to/your/Undergraduate2022-2019.xlsx"
 
 # Load the pre-trained UDPipe model for English (update the path to your model)
 ud_model <- udpipe_load_model("path/to/english-ud-2.0-170801.udpipe")
@@ -66,7 +66,7 @@ process_and_visualize_data <- function(filepath, sample_size) {
 }
 
 # Example usage with a generic path and a sample size of 100
-process_and_visualize_data('/path/to/your/', 100)
+process_and_visualize_data('/path/to/your/Undergraduate2022-2019.xlsx', 100)
 
 # Define the data (replace with your actual data or function to process it)
 student_data <- data.frame(
@@ -103,5 +103,5 @@ generate_sentiment_by_grade_plot <- function(filepath) {
 }
 
 # Example usage with a generic path
-generate_sentiment_by_grade_plot('/path/to/your/')
+generate_sentiment_by_grade_plot('/path/to/your/Undergraduate2022-2019.xlsx')
 
