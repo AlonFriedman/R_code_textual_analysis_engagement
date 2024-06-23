@@ -10,7 +10,7 @@ library(readxl)
 library(udpipe)
 
 # Specify the file path (update as needed)
-filepath <- "path/to/your/Undergraduate2022-2019.xlsx"
+filepath <- "/path/to/your/"
 
 # Load the pre-trained UDPipe model for English (update the path to your model)
 ud_model <- udpipe_load_model("path/to/english-ud-2.0-170801.udpipe")
@@ -20,6 +20,15 @@ conduct_sampling <- function(df, sample_size) {
   set.seed(123)  # For reproducibility
   sample_df <- df %>% sample_n(sample_size)
   return(sample_df)
+}
+
+# Function to calculate standard error and margin of error
+calculate_statistics <- function(df, column_name) {
+  p <- mean(df[[column_name]])
+  n <- nrow(df)
+  se <- sqrt(p * (1 - p) / n)
+  me <- se * 1.96  # 95% confidence level
+  return(list(SE = se, ME = me))
 }
 
 # Function to analyze comments and count POS
@@ -40,6 +49,11 @@ process_and_visualize_data <- function(filepath, sample_size) {
   df <- read_excel(filepath)
   sample_df <- conduct_sampling(df, sample_size)
   
+  # Calculate statistics for sentiment analysis (assuming 'sentiment_score' column exists)
+  stats <- calculate_statistics(sample_df, 'sentiment_score')
+  print(paste("Standard Error (SE):", stats$SE))
+  print(paste("Margin of Error (ME):", stats$ME))
+  
   counts <- analyze_comments(sample_df$Comments)
   
   plot <- ggplot(counts, aes(x = upos, y = count, fill = upos)) +
@@ -52,7 +66,7 @@ process_and_visualize_data <- function(filepath, sample_size) {
 }
 
 # Example usage with a generic path and a sample size of 100
-process_and_visualize_data('path/to/your/Undergraduate2022-2019.xlsx', 100)
+process_and_visualize_data('/path/to/your/', 100)
 
 # Define the data (replace with your actual data or function to process it)
 student_data <- data.frame(
@@ -74,8 +88,6 @@ generate_sentiment_plot <- function(data) {
 sentiment_plot <- generate_sentiment_plot(student_data)
 print(sentiment_plot) # Explicitly print the plot
 
-# Figure 6
-
 # Define a function to read and process data from an Excel file
 generate_sentiment_by_grade_plot <- function(filepath) {
   df <- read_excel(filepath)
@@ -91,4 +103,5 @@ generate_sentiment_by_grade_plot <- function(filepath) {
 }
 
 # Example usage with a generic path
-generate_sentiment_by_grade_plot('path/to/your/Undergraduate2022-2019.xlsx')
+generate_sentiment_by_grade_plot('/path/to/your/')
+
