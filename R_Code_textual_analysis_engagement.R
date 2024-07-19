@@ -1,43 +1,145 @@
-# Calculate the standard error (SE) and margin of error (ME)
-calculate_ci <- function(proportion, n) {
-  se <- sqrt((proportion * (1 - proportion)) / n)
-  me <- se * 1.96
-  list(se = se, me = me)
+# Load necessary libraries
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(syuzhet)
+library(stringr)
+library(textstem)   # For stemming
+library(tidytext)   # For tokenization and sentiment analysis
+library(tm)         # For removeWords function
+
+# Open file dialog to choose the Excel file
+file_path <- file.choose()
+
+# Load the dataset
+Undergraduate2022_2019 <- read_excel(file_path)
+
+# Print the dimensions of the dataset
+cat("Dimensions of the dataset:\n")
+print(dim(Undergraduate2022_2019))
+
+# Print the first few rows
+cat("\nFirst few rows of the dataset:\n")
+print(head(Undergraduate2022_2019))
+
+# Function to clean text data
+clean_text <- function(text) {
+  text <- tolower(text)
+  text <- str_replace_all(text, "[[:punct:]]", " ")
+  text <- str_replace_all(text, "[[:digit:]]", " ")
+  text <- removeWords(text, stopwords("en"))
+  text <- str_squish(text)
+  text <- stem_words(text, language = "en")
+  return(text)
 }
 
-# Apply CI calculation
-sampled_data <- sampled_data %>%
-  mutate(pos_ratio = pos_count / (pos_count + neg_count),
-         ci = list(calculate_ci(pos_ratio, n()))) %>%
-  unnest_wider(ci)
+# Print column names to identify the correct ones
+print(colnames(Undergraduate2022_2019))
 
-# Plot results
-ggplot(sampled_data, aes(x = Grade, y = total_sentiment, fill = Grade)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  geom_errorbar(aes(ymin = total_sentiment - me, ymax = total_sentiment + me), width = 0.2) +
-  theme_minimal() +
-  labs(title = "Total Sentiment by Grade",
-       x = "Grade", y = "Total Sentiment") +
-  scale_fill_manual(values = c("A" = "blue", "B" = "green", "C" = "yellow", "D" = "orange", "F" = "red"))
+# Manually check and update these variables based on the actual column names in your dataset
+project_col <- "Project.Type"  # Replace with the actual column name for project type
+comment_col <- "Review.Comments"  # Replace with the actual column name for comments
 
-# Print sample summary
-sampled_data %>%
-  summarise(mean_pos = mean(pos_count), mean_neg = mean(neg_count),
-            mean_negating = mean(negating_count), mean_sentiment = mean(total_sentiment))
+# Verify and set the project column name
+if (!(project_col %in% colnames(Undergraduate2022_2019))) {
+  stop(paste("Column", project_col, "not found in the dataset. Please verify column names."))
+}
 
-# Additional analysis
-summary_table <- sampled_data %>%
-  group_by(Grade) %>%
-  summarise(Reviews = n(), Pos = mean(pos_count), Neg = mean(neg_count),
-            Total = mean(total_sentiment), Negate = mean(negating_count),
-            Words_Per_Sentence = mean(str_count(Comments, "\\w+")),
-            Words_Per_Review = mean(str_count(Comments, "\\s+") + 1),
-            Adj = mean(ADJ), Adv = mean(ADV), Noun = mean(NOUN))
+# Verify and set the comment column name
+if (!(comment_col %in% colnames(Undergraduate2022_2019))) {
+  stop(paste("Column", comment_col, "not found in the dataset. Please verify column names."))
+}
 
-print(summary_table)
+# Filter the data for final projects (adjust this if needed)
+final_project <- Undergraduate2022_2019 %>%
+  filter(grepl("Final", !!sym(project_col), ignore.case = TRUE))
 
-# Save the plot
-ggsave("sentiment_by_grade.png")
+# Check if final_project is correctly created
+if (nrow(final_project) == 0) {
+  stop("No records found for 'Final' projects. Please verify your data and column names.")
+}
 
-# Save the summary table to a CSV file
-write.csv(summary_table, "summary_table.csv", row.names = FALSE)
+# Calculate the sample size
+sample_size <- nrow(final_project)
+
+# Print the sample size
+cat("\nSample size:", sample_size, "\n")
+
+# Function to analyze reviews with POS tagging and sentiment analysis
+analyze_reviews <- function(data, comment_col) {
+  # Clean the 'Comments' column
+  data[[comment_col]] <- sapply(data[[comment_col]], clean_text)
+  
+  # Tokenization using tidytext
+  data_tokens <- data %>%
+    unnest_tokens(word, !!sym(comment_col))
+  
+  # Sentiment analysis using syuzhet
+  sentiments <- get_nrc_sentiment(as.character(data[[comment_col]]))
+  
+  data <- data %>%
+    mutate(
+      words_per_review = str_count(data[[comment_col]], "\\w+"),
+      sentiment_score = rowSums(sentiments[, c("positive", "negative")]),
+      negative_score = sentiments$negative,
+      positive_score = sentiments$positive
+    )
+  
+  data_summary <- data %>%
+    summarise(
+      avg_words_per_review = mean(words_per_review, na.rm = TRUE),
+      sd_words_per_review = sd(words_per_review, na.rm = TRUE),
+      avg_sentiment_score = mean(sentiment_score, na.rm = TRUE),
+      sd_sentiment_score = sd(sentiment_score, na.rm = TRUE),
+      avg_negative_score = mean(negative_score, na.rm = TRUE),
+      sd_negative_score = sd(negative_score, na.rm = TRUE),
+      avg_positive_score = mean(positive_score, na.rm = TRUE),
+      sd_positive_score = sd(positive_score, na.rm = TRUE),
+      avg_negative_score_ratio = mean(negative_score / (negative_score + positive_score), na.rm = TRUE),
+      sd_negative_score_ratio = sd(negative_score / (negative_score + positive_score), na.rm = TRUE)
+    )
+  
+  return(data_summary)
+}
+
+# Analyze final project reviews
+final_summary <- analyze_reviews(final_project, comment_col)
+
+# Print final project summary and confidence intervals
+cat("Final Project Summary:\n")
+print(as.data.frame(final_summary))
+
+# Function to calculate confidence intervals for negative keyword ratio
+calc_conf_interval <- function(mean, sd, n) {
+  error <- qnorm(0.975) * sd / sqrt(n)
+  lower <- mean - error
+  upper <- mean + error
+  return(c(lower = lower, upper = upper))
+}
+
+# Calculate confidence intervals for final project
+final_conf_interval <- calc_conf_interval(
+  mean = final_summary$avg_negative_score_ratio,
+  sd = final_summary$sd_negative_score_ratio,
+  n = sample_size
+)
+
+cat("\n95% Confidence Interval for Negative Keyword Ratio:\n")
+print(final_conf_interval)
+
+# Print the first few reviews
+cat("\nFirst few reviews:\n")
+print(head(final_project[[comment_col]]))
+
+# Print the number of reviews
+cat("\nNumber of reviews:", sample_size, "\n")
+
+# Print unique words in reviews
+unique_words <- final_project[[comment_col]] %>%
+  unlist() %>%
+  strsplit(" ") %>%
+  unlist() %>%
+  unique()
+
+cat("\nSample of unique words in reviews:\n")
+print(head(unique_words, 20))
